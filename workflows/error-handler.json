@@ -1,0 +1,82 @@
+{
+  "name": "Support Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "typeVersion": 1,
+      "position": [
+        320,
+        320
+      ],
+      "id": "error-trigger",
+      "name": "On Execution Error",
+      "type": "n8n-nodes-base.errorTrigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const e = $json || {};\nconst exec = e.execution || {};\nconst wf = e.workflow || {};\nconst err = exec.error || {};\nreturn [{ json: {\n  workflow: wf.name || 'unknown',\n  workflowId: wf.id || null,\n  node: exec.lastNodeExecuted || (err.node && err.node.name) || null,\n  error: err.message || String(err) || 'unknown error',\n  stack: err.stack || null,\n  input: (err.node && err.node.parameters) || e.trigger || null,\n  mode: exec.mode || null\n} }];"
+      },
+      "typeVersion": 2,
+      "position": [
+        560,
+        320
+      ],
+      "id": "extract-failure",
+      "name": "Extract Failure",
+      "type": "n8n-nodes-base.code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPPORT_SERVICE_URL}}/errors",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "ignoreResponseCode": true
+        }
+      },
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        320
+      ],
+      "id": "report-failure",
+      "name": "Report Failure",
+      "type": "n8n-nodes-base.httpRequest"
+    }
+  ],
+  "connections": {
+    "On Execution Error": {
+      "main": [
+        [
+          {
+            "node": "Extract Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Failure": {
+      "main": [
+        [
+          {
+            "node": "Report Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateId": "ecom-support-kit-error"
+  }
+}
