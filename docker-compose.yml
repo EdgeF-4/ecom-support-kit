@@ -1,0 +1,68 @@
+name: ecom-support-kit
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: support
+      POSTGRES_USER: support
+      # Local dev default only. For any real deployment, set POSTGRES_PASSWORD
+      # in your shell environment. Never commit a real password.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-support_dev_pw}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support -d support"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  service:
+    build: ./service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Offline defaults. Mount config.json to override with real values.
+      STORE_DRIVER: postgres
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: support
+      PGUSER: support
+      PGPASSWORD: ${POSTGRES_PASSWORD:-support_dev_pw}
+      LLM_DRIVER: mock
+      PORT: "8080"
+    # Real secrets stay out of git. Mount a chmod 600 config.json when you need
+    # a live store or a live model provider:
+    # volumes:
+    #   - ./config.json:/app/config.json:ro
+    ports:
+      - "8080:8080"
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      - service
+      - postgres
+    environment:
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      N8N_HOST: localhost
+      N8N_SECURE_COOKIE: "false"
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: UTC
+      # The workflows reach the tool service at this URL.
+      SUPPORT_SERVICE_URL: http://service:8080
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+
+volumes:
+  pgdata:
+  n8n_data:

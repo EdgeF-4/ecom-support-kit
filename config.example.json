@@ -1,0 +1,33 @@
+{
+  "service": {
+    "host": "0.0.0.0",
+    "port": 8080
+  },
+  "store": {
+    "driver": "postgres",
+    "postgres": {
+      "host": "postgres",
+      "port": 5432,
+      "database": "support",
+      "user": "support",
+      "password": "REPLACE_WITH_A_STRONG_PASSWORD"
+    }
+  },
+  "llm": {
+    "driver": "mock",
+    "openaiCompatible": {
+      "baseUrl": "https://api.your-provider.example/v1",
+      "apiKey": "REPLACE_WITH_PROVIDER_KEY",
+      "model": "your-model-name",
+      "maxTokens": 400
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "ttlSeconds": 86400
+  },
+  "escalation": {
+    "queue": "support-tier-1",
+    "notifyEmail": "support@example.com"
+  }
+}
