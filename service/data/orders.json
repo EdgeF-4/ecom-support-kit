@@ -1,0 +1,51 @@
+[
+  {
+    "id": "1001",
+    "email": "ana@example.com",
+    "name": "Ana Ruiz",
+    "status": "paid",
+    "fulfillment": "shipped",
+    "carrier": "UPS",
+    "tracking": "1Z999AA10123456784",
+    "items": [{ "title": "Merino Wool Scarf", "qty": 1 }],
+    "placedAt": "2026-06-15",
+    "eta": "2026-06-24",
+    "total": "49.00 USD"
+  },
+  {
+    "id": "1002",
+    "email": "sam@example.com",
+    "name": "Sam Lee",
+    "status": "paid",
+    "fulfillment": "unfulfilled",
+    "items": [{ "title": "Canvas Tote", "qty": 2 }],
+    "placedAt": "2026-06-20",
+    "total": "58.00 USD"
+  },
+  {
+    "id": "1003",
+    "email": "jo@example.com",
+    "name": "Jo Park",
+    "status": "refunded",
+    "fulfillment": "returned",
+    "items": [{ "title": "Linen Shirt", "qty": 1 }],
+    "placedAt": "2026-06-05",
+    "total": "72.00 USD"
+  },
+  {
+    "id": "1004",
+    "email": "max@example.com",
+    "name": "Max Stone",
+    "status": "paid",
+    "fulfillment": "delivered",
+    "carrier": "USPS",
+    "tracking": "9400111899223817200000",
+    "items": [
+      { "title": "Cotton Cap", "qty": 1 },
+      { "title": "Wool Socks", "qty": 3 }
+    ],
+    "placedAt": "2026-06-10",
+    "deliveredAt": "2026-06-18",
+    "total": "61.00 USD"
+  }
+]

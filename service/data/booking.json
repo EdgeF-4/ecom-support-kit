@@ -1,0 +1,6 @@
+[
+  { "id": "slot-1", "topic": "consultation", "startsAt": "2026-06-24T15:00:00Z", "durationMin": 30 },
+  { "id": "slot-2", "topic": "consultation", "startsAt": "2026-06-25T17:30:00Z", "durationMin": 30 },
+  { "id": "slot-3", "topic": "fitting", "startsAt": "2026-06-26T14:00:00Z", "durationMin": 45 },
+  { "id": "slot-4", "topic": "fitting", "startsAt": "2026-06-27T16:00:00Z", "durationMin": 45 }
+]

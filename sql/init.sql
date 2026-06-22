@@ -30,3 +30,14 @@ CREATE TABLE IF NOT EXISTS answer_cache (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_hit_at TIMESTAMPTZ
 );
+
+-- Failures reported by the n8n error workflow: the failing node, the input,
+-- and the error message for each failed execution.
+CREATE TABLE IF NOT EXISTS failures (
+    id         SERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    workflow   TEXT,
+    node       TEXT,
+    error      TEXT,
+    payload    JSONB NOT NULL DEFAULT '{}'::jsonb
+);
