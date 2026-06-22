@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 z" fill="#475569"/>
+    </marker>
+    <style>
+      .lbl { fill:#1e293b; font-size:13px; }
+      .sub { fill:#475569; font-size:11px; }
+      .title { fill:#0f172a; font-size:14px; font-weight:600; }
+      .edge { stroke:#475569; stroke-width:1.5; fill:none; marker-end:url(#arrow); }
+      .note { fill:#64748b; font-size:10px; }
+      .box { rx:8; ry:8; stroke-width:1.5; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="600" fill="#ffffff"/>
+
+  <!-- Customer -->
+  <rect class="box" x="380" y="20" width="200" height="44" fill="#eef2ff" stroke="#6366f1"/>
+  <text class="title" x="480" y="47" text-anchor="middle">Customer message</text>
+  <text class="note" x="480" y="60" text-anchor="middle">web, email, or chat channel</text>
+
+  <line class="edge" x1="480" y1="64" x2="480" y2="104"/>
+
+  <!-- n8n intake workflow -->
+  <rect class="box" x="40" y="106" width="880" height="150" fill="#f8fafc" stroke="#94a3b8"/>
+  <text class="title" x="60" y="128">n8n: Support Intake workflow</text>
+
+  <rect class="box" x="60" y="146" width="92" height="40" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="106" y="170" text-anchor="middle">Webhook</text>
+  <rect class="box" x="172" y="146" width="92" height="40" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="218" y="170" text-anchor="middle">Classify</text>
+  <rect class="box" x="284" y="146" width="92" height="40" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="330" y="170" text-anchor="middle">Route</text>
+
+  <!-- four branches -->
+  <rect class="box" x="396" y="120" width="178" height="24" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="sub" x="405" y="136">Deterministic (no model)</text>
+  <rect class="box" x="396" y="148" width="178" height="24" fill="#eff6ff" stroke="#3b82f6"/>
+  <text class="sub" x="405" y="164">Model: agent + MCP tools</text>
+  <rect class="box" x="396" y="176" width="178" height="24" fill="#fef3c7" stroke="#f59e0b"/>
+  <text class="sub" x="405" y="192">Escalate to a human</text>
+  <rect class="box" x="396" y="204" width="178" height="24" fill="#fee2e2" stroke="#ef4444"/>
+  <text class="sub" x="405" y="220">Out of scope: decline</text>
+
+  <rect class="box" x="600" y="146" width="110" height="40" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="655" y="170" text-anchor="middle">Persist ticket</text>
+  <rect class="box" x="730" y="146" width="92" height="40" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="776" y="170" text-anchor="middle">Respond</text>
+
+  <line class="edge" x1="152" y1="166" x2="170" y2="166"/>
+  <line class="edge" x1="264" y1="166" x2="282" y2="166"/>
+  <line class="edge" x1="376" y1="166" x2="394" y2="166"/>
+  <line class="edge" x1="574" y1="166" x2="598" y2="166"/>
+  <line class="edge" x1="710" y1="166" x2="728" y2="166"/>
+
+  <!-- workflow to tool service -->
+  <line class="edge" x1="330" y1="186" x2="330" y2="306"/>
+  <text class="note" x="338" y="232">classify + tool calls</text>
+  <text class="note" x="338" y="246">(MCP and HTTP)</text>
+
+  <!-- Tool service -->
+  <rect class="box" x="40" y="308" width="540" height="172" fill="#f8fafc" stroke="#94a3b8"/>
+  <text class="title" x="60" y="330">Tool service (Node + TypeScript)</text>
+
+  <rect class="box" x="60" y="344" width="500" height="30" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="70" y="364">MCP server  /  REST facade  /  OpenAI compatible mock</text>
+
+  <rect class="box" x="60" y="384" width="120" height="34" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="sub" x="120" y="405" text-anchor="middle">order_lookup</text>
+  <rect class="box" x="190" y="384" width="120" height="34" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="sub" x="250" y="405" text-anchor="middle">faq_retrieval</text>
+  <rect class="box" x="320" y="384" width="110" height="34" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="sub" x="375" y="405" text-anchor="middle">check_booking</text>
+  <rect class="box" x="440" y="384" width="100" height="34" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="sub" x="490" y="405" text-anchor="middle">escalate</text>
+
+  <rect class="box" x="60" y="428" width="500" height="30" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="lbl" x="70" y="448">Deterministic classifier  +  answer cache  +  pipeline</text>
+
+  <!-- Mock adapters -->
+  <rect class="box" x="620" y="308" width="300" height="80" fill="#fffbeb" stroke="#f59e0b"/>
+  <text class="title" x="640" y="332">Mock adapters (offline)</text>
+  <text class="sub" x="640" y="352">Shopify adapter: orders, products</text>
+  <text class="sub" x="640" y="370">Model: deterministic, no keys, no network</text>
+
+  <line class="edge" x1="560" y1="401" x2="618" y2="360"/>
+
+  <!-- Postgres -->
+  <path d="M620,420 a150,12 0 0,0 300,0 v52 a150,12 0 0,1 -300,0 z" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <ellipse cx="770" cy="420" rx="150" ry="12" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text class="title" x="770" y="452" text-anchor="middle">Postgres</text>
+  <text class="sub" x="770" y="470" text-anchor="middle">tickets, answer_cache, failures</text>
+
+  <line class="edge" x1="655" y1="186" x2="700" y2="412"/>
+  <line class="edge" x1="500" y1="458" x2="618" y2="455"/>
+
+  <!-- Error workflow -->
+  <rect class="box" x="40" y="510" width="540" height="60" fill="#fef2f2" stroke="#ef4444"/>
+  <text class="title" x="60" y="532">n8n: Error Handler workflow</text>
+  <text class="sub" x="60" y="552">catches any failed execution and posts node, input, and error to POST /errors</text>
+  <line class="edge" x1="310" y1="510" x2="310" y2="480"/>
+</svg>
