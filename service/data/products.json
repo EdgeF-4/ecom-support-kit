@@ -1,0 +1,7 @@
+[
+  { "id": "p-scarf", "title": "Merino Wool Scarf", "price": "49.00 USD", "options": ["Charcoal", "Camel", "Forest"], "inStock": true },
+  { "id": "p-tote", "title": "Canvas Tote", "price": "29.00 USD", "options": ["Natural", "Black"], "inStock": true },
+  { "id": "p-shirt", "title": "Linen Shirt", "price": "72.00 USD", "options": ["S", "M", "L", "XL"], "inStock": false },
+  { "id": "p-cap", "title": "Cotton Cap", "price": "25.00 USD", "options": ["One Size"], "inStock": true },
+  { "id": "p-socks", "title": "Wool Socks", "price": "12.00 USD", "options": ["S", "M", "L"], "inStock": true }
+]

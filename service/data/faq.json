@@ -1,0 +1,51 @@
+[
+  {
+    "id": "faq-returns",
+    "topic": "returns",
+    "question": "What is your return policy?",
+    "answer": "You can return unworn items within 30 days of delivery for a full refund. Start a return from your account order page, print the prepaid label, and drop it off. Refunds post to your original payment method within 5 business days of us receiving the item.",
+    "keywords": ["return", "returns", "refund", "exchange", "send back", "money back", "rma"]
+  },
+  {
+    "id": "faq-shipping",
+    "topic": "shipping",
+    "question": "How long does shipping take?",
+    "answer": "Standard shipping is 3 to 5 business days within the country and 7 to 14 business days internationally. Orders placed before 2pm ship the same business day. You get a tracking link by email as soon as your order ships.",
+    "keywords": ["shipping", "ship", "delivery", "how long", "when will", "arrive", "courier", "tracking time"]
+  },
+  {
+    "id": "faq-sizing",
+    "topic": "sizing",
+    "question": "How do your sizes run?",
+    "answer": "Our apparel runs true to size. If you are between sizes, we suggest sizing up for a relaxed fit. Each product page has a measurements table in centimeters and inches.",
+    "keywords": ["size", "sizing", "fit", "measurements", "true to size", "size chart"]
+  },
+  {
+    "id": "faq-warranty",
+    "topic": "warranty",
+    "question": "Do your products have a warranty?",
+    "answer": "Every item carries a one year warranty against manufacturing defects. If something is wrong, send a photo with your order number and we will repair or replace it.",
+    "keywords": ["warranty", "guarantee", "defect", "broken", "faulty", "repair"]
+  },
+  {
+    "id": "faq-payment",
+    "topic": "payment",
+    "question": "What payment methods do you accept?",
+    "answer": "We accept all major cards, Apple Pay, Google Pay, and Shop Pay. You can also pay in four interest free installments at checkout on orders over 50 USD.",
+    "keywords": ["payment", "pay", "card", "apple pay", "google pay", "installments", "klarna", "shop pay"]
+  },
+  {
+    "id": "faq-materials",
+    "topic": "materials",
+    "question": "What materials do you use?",
+    "answer": "We use natural fibers wherever possible, including responsibly sourced merino wool, organic cotton, and European linen. Care instructions are printed on each label and listed on the product page.",
+    "keywords": ["material", "materials", "fabric", "wool", "cotton", "linen", "care", "wash"]
+  },
+  {
+    "id": "faq-contact",
+    "topic": "contact",
+    "question": "How can I reach a person?",
+    "answer": "Our team is available by email Monday to Friday, 9am to 5pm. Reply to any order email or use the contact form and we will get back to you within one business day.",
+    "keywords": ["contact", "reach", "hours", "support", "help", "phone", "email us"]
+  }
+]
