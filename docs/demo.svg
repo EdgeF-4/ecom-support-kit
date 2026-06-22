@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720.1999999999999" height="856" viewBox="0 0 720.1999999999999 856">
+  <rect x="0" y="0" width="720.1999999999999" height="856" rx="10" fill="#0d1117" stroke="#30363d"/>
+  <rect x="0" y="0" width="720.1999999999999" height="30" rx="10" fill="#161b22"/>
+  <rect x="0" y="20" width="720.1999999999999" height="10" fill="#161b22"/>
+  <circle cx="20" cy="15" r="6" fill="#ff5f56"/>
+  <circle cx="40" cy="15" r="6" fill="#ffbd2e"/>
+  <circle cx="60" cy="15" r="6" fill="#27c93f"/>
+  <text x="360.09999999999997" y="19" text-anchor="middle" fill="#8b949e" font-family="monospace" font-size="11">npm run demo</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5">
+  <text x="22" y="46" fill="#d2a8ff">ecom-support-kit offline demo (mock store, mock model)</text>
+  <text x="22" y="64" fill="#484f58">================================================================</text>
+  <text x="22" y="82" fill="#c9d1d9"> </text>
+  <text x="22" y="100" fill="#7ee787">&gt; Where is my order #1001?</text>
+  <text x="22" y="118" fill="#79c0ff">  route=deterministic      intent=order_status  confidence=0.92  ticket=#1</text>
+  <text x="22" y="136" fill="#c9d1d9">reply: Order #1001 (1 x Merino Wool Scarf) is on its way via UPS. Tracking number</text>
+  <text x="22" y="154" fill="#c9d1d9">    1Z999AA10123456784. Estimated delivery 2026-06-24.</text>
+  <text x="22" y="172" fill="#c9d1d9"> </text>
+  <text x="22" y="190" fill="#7ee787">&gt; What is your return policy?</text>
+  <text x="22" y="208" fill="#79c0ff">  route=deterministic      intent=returns  confidence=0.9  ticket=#2</text>
+  <text x="22" y="226" fill="#c9d1d9">reply: You can return unworn items within 30 days of delivery for a full refund. Start a</text>
+  <text x="22" y="244" fill="#c9d1d9">    return from your account order page, print the prepaid label, and drop it off. Refunds</text>
+  <text x="22" y="262" fill="#c9d1d9">    post to your original payment method within 5 business days of us receiving the item.</text>
+  <text x="22" y="280" fill="#c9d1d9"> </text>
+  <text x="22" y="298" fill="#7ee787">&gt; Where is my order #1001 and can I return the scarf in it?</text>
+  <text x="22" y="316" fill="#79c0ff">  route=model              intent=multi_topic  confidence=0.75  ticket=#3</text>
+  <text x="22" y="334" fill="#c9d1d9">reply: Thanks for reaching out. Here is what I found for you: Order #1001 (1 x Merino Wool</text>
+  <text x="22" y="352" fill="#c9d1d9">    Scarf) is on its way via UPS. Tracking number 1Z999AA10123456784. Estimated delivery</text>
+  <text x="22" y="370" fill="#c9d1d9">    2026-06-24. You can return unworn items within 30 days of delivery for a full refund.</text>
+  <text x="22" y="388" fill="#c9d1d9">    Start a return from your account order page, print the prepaid label, and drop it off.</text>
+  <text x="22" y="406" fill="#c9d1d9">    Refunds post to your original payment method within 5 business days of us receiving the</text>
+  <text x="22" y="424" fill="#c9d1d9">    item. Is there anything else I can help with?</text>
+  <text x="22" y="442" fill="#c9d1d9"> </text>
+  <text x="22" y="460" fill="#7ee787">&gt; I want to book a fitting next week</text>
+  <text x="22" y="478" fill="#79c0ff">  route=deterministic      intent=booking  confidence=0.88  ticket=#4</text>
+  <text x="22" y="496" fill="#c9d1d9">reply: Here are the next available fitting times: fitting on 2026-06-26 14:00 UTC (45 min);</text>
+  <text x="22" y="514" fill="#c9d1d9">    fitting on 2026-06-27 16:00 UTC (45 min). Reply with the one you want and the email for</text>
+  <text x="22" y="532" fill="#c9d1d9">    the invite, and I will lock it in.</text>
+  <text x="22" y="550" fill="#c9d1d9"> </text>
+  <text x="22" y="568" fill="#7ee787">&gt; Can you write me a poem about the ocean?</text>
+  <text x="22" y="586" fill="#79c0ff">  route=out_of_scope       intent=out_of_scope  confidence=0.9  ticket=#5</text>
+  <text x="22" y="604" fill="#c9d1d9">reply: I can only help with store support such as order status, returns, shipping, our FAQ,</text>
+  <text x="22" y="622" fill="#c9d1d9">    and booking. I am not able to help with that request, but I can connect you with a</text>
+  <text x="22" y="640" fill="#c9d1d9">    member of our team if you like.</text>
+  <text x="22" y="658" fill="#c9d1d9"> </text>
+  <text x="22" y="676" fill="#7ee787">&gt; This is urgent, I need to speak to a person</text>
+  <text x="22" y="694" fill="#79c0ff">  route=escalate           intent=human_handoff  confidence=0.99  ticket=#6</text>
+  <text x="22" y="712" fill="#c9d1d9">reply: I am connecting you with our team. I have logged your request and routed it to</text>
+  <text x="22" y="730" fill="#c9d1d9">    support-tier-1. Someone will follow up by email shortly.</text>
+  <text x="22" y="748" fill="#c9d1d9"> </text>
+  <text x="22" y="766" fill="#484f58">----------------------------------------------------------------</text>
+  <text x="22" y="784" fill="#ffa657">model calls made:        1</text>
+  <text x="22" y="802" fill="#ffa657">repeat served from cache: true</text>
+  <text x="22" y="820" fill="#ffa657">cache entries / hits:     5 / 1</text>
+  </g>
+</svg>
