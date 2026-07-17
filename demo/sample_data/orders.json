@@ -1,0 +1,15 @@
+[
+  {
+    "id": "4101",
+    "email": "demo.customer@example.invalid",
+    "name": "Demo Customer",
+    "status": "paid",
+    "fulfillment": "shipped",
+    "carrier": "Demo Parcel",
+    "tracking": "DEMO-TRACK-4101",
+    "items": [{"title": "Sample Wool Scarf", "qty": 1}],
+    "placedAt": "2026-07-10",
+    "eta": "2026-07-20",
+    "total": "49.00 USD"
+  }
+]

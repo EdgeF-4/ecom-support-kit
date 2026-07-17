@@ -1,0 +1,16 @@
+[
+  {
+    "id": "demo-returns",
+    "topic": "returns",
+    "question": "What is the return policy?",
+    "answer": "Synthetic Store accepts unworn items within 30 days of delivery for a full refund.",
+    "keywords": ["return", "returns", "refund", "exchange"]
+  },
+  {
+    "id": "demo-shipping",
+    "topic": "shipping",
+    "question": "How long does shipping take?",
+    "answer": "Synthetic Store standard shipping takes 3 to 5 business days.",
+    "keywords": ["shipping", "ship", "delivery", "arrive"]
+  }
+]

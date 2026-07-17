@@ -1,0 +1,26 @@
+[
+  {
+    "label": "direct order lookup",
+    "message": "Where is my order #4101?"
+  },
+  {
+    "label": "store policy lookup",
+    "message": "What is your return policy?"
+  },
+  {
+    "label": "multi-tool answer",
+    "message": "Where is my order #4101 and can I return the scarf in it?"
+  },
+  {
+    "label": "booking lookup",
+    "message": "I want to book a fitting next week"
+  },
+  {
+    "label": "scope guardrail",
+    "message": "Can you write me a poem about the ocean?"
+  },
+  {
+    "label": "human handoff",
+    "message": "This is urgent, I need to speak to a person"
+  }
+]

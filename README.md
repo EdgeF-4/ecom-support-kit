@@ -1,5 +1,32 @@
 # ecom-support-kit
 
+## Quickstart: 60-second offline demo
+
+With Node 20 or newer and the repository's npm dependencies installed, run:
+
+```sh
+./demo.sh
+```
+
+The command compiles the service locally, loads the bundled synthetic
+storefront, and walks through deterministic answers, multi-tool synthesis,
+scope refusal, human handoff, ticket persistence, and cache reuse. It forces the
+in-memory store and mock model, so it needs no API keys, containers, paid calls,
+or network access. Expected output includes:
+
+```text
+[1/4] Load a synthetic storefront
+[2/4] Route customer messages through the real support pipeline
+  route=deterministic  intent=order_status  status=resolved  ticket=#1
+  route=model  intent=multi_topic  status=resolved  ticket=#3
+  route=out_of_scope  intent=out_of_scope  status=resolved  ticket=#5
+[3/4] Repeat the multi-tool question to exercise the answer cache
+  served from cache: true
+  model calls total: 1
+[4/4] Confirm the operational trail
+  tickets persisted: 7
+```
+
 A self hostable customer support kit for Shopify stores, built on self hosted
 n8n. It is a scoped business task assistant for order status, returns, shipping,
 store FAQ, and booking. It answers from your store data and routes anything it
@@ -52,8 +79,9 @@ backed by mock adapters that need no credentials. Full detail is in
 
 ## See it run
 
-This is the actual output of `npm run demo`, which sends sample messages through
-the full pipeline offline:
+This terminal preview shows the same support routes as the current offline demo.
+The compact dataset used by `./demo.sh` has synthetic order IDs and shorter
+store answers so a prospect can scan the walkthrough in under a minute:
 
 ![Demo run](docs/demo.svg)
 
@@ -95,7 +123,7 @@ cd service
 npm install
 npm run build
 npm start          # serves on 8080 with the in memory store and mock model
-npm run demo       # prints the sample transcript shown above
+npm run demo       # runs the same offline portfolio walkthrough as ./demo.sh
 ```
 
 ## How it decides

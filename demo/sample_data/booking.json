@@ -1,0 +1,14 @@
+[
+  {
+    "id": "demo-fitting-1",
+    "topic": "fitting",
+    "startsAt": "2026-07-22T14:00:00Z",
+    "durationMin": 45
+  },
+  {
+    "id": "demo-consultation-1",
+    "topic": "consultation",
+    "startsAt": "2026-07-23T16:00:00Z",
+    "durationMin": 30
+  }
+]

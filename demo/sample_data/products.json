@@ -1,0 +1,9 @@
+[
+  {
+    "id": "demo-scarf",
+    "title": "Sample Wool Scarf",
+    "price": "49.00 USD",
+    "options": ["Charcoal", "Forest"],
+    "inStock": true
+  }
+]
