@@ -31,8 +31,10 @@ docker compose exec n8n n8n import:workflow --separate --input=/workflows
    node and create an OpenAI credential. Any non empty API key works, because
    the node `baseURL` is overridden to the local mock at
    `{{$env.SUPPORT_SERVICE_URL}}/v1`. No real provider is contacted. To use a
-   real provider later, point the base URL and key at it in the credential and
-   in `config.json`.
+   real provider later, first implement and select a live adapter or deliberately
+   retarget this workflow node and its credential. The current service always
+   constructs the local mock model, and changing `config.json` alone does not
+   enable a real provider.
 
 4. **MCP tools.** The `Store Tools (MCP)` node connects to the tool service MCP
    server at `{{$env.SUPPORT_SERVICE_URL}}/mcp` over streamable HTTP. No auth is

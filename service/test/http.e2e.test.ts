@@ -9,7 +9,7 @@ import { testConfig } from "./helpers.js";
 async function boot() {
   const svc = await createServices(testConfig());
   const server = createServer(svc);
-  server.listen(0);
+  server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const port = (server.address() as AddressInfo).port;
   return { svc, server, base: `http://127.0.0.1:${port}` };
