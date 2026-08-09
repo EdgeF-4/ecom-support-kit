@@ -17,8 +17,9 @@ declined instead of answered freely.
 | Mock LLM | Deterministic, grounded, OpenAI-compatible stand in so the kit runs offline with no API key and no paid calls. | In-process module |
 
 Everything ships with mock adapters, so the default configuration runs with no
-network access, no API keys, and no paid calls. Swapping in a real Shopify
-store or a real model provider is a configuration change, not a code change.
+network access, no API keys, and no paid calls. Live store and model adapters
+are not implemented in this source. Adding either integration requires code,
+selection wiring, reviewed configuration, and integration tests.
 
 ## Request flow
 

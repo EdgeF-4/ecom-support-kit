@@ -155,10 +155,10 @@ to be `chmod 600`. A committed `config.example.json` documents every field.
 Secrets never go in environment files and are never committed. The default
 config runs the kit offline, so no secret is needed to try it.
 
-To go live, point the store adapter at a real Shopify backend and set
-`llm.driver` to `openaiCompatible` with the base URL, model, and key of any
-OpenAI compatible provider. Those are the only changes; the rest of the kit does
-not move.
+The shipped service instantiates only the mock store and mock model adapters.
+Going live therefore requires implementing and selecting live adapters, then
+supplying their reviewed endpoint, model, and credential configuration. Changing
+`config.json` alone does not enable a real store or model provider.
 
 ## Tests
 
