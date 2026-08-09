@@ -100,9 +100,9 @@ chmod 600 config.json
 docker compose up -d
 ```
 
-This starts Postgres, the tool service on port 8080, and n8n on port 5678. The
-default configuration uses the mock store and the mock model, so no API key is
-required.
+This starts Postgres, the tool service on port 8080, and n8n on port 5678. Both
+published ports bind to host loopback only. The default configuration uses the
+mock store and the mock model, so no API key is required.
 
 Send a message straight to the tool service:
 

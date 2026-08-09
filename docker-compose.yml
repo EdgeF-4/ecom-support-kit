@@ -34,13 +34,14 @@ services:
       PGUSER: support
       PGPASSWORD: ${POSTGRES_PASSWORD:-support_dev_pw}
       LLM_DRIVER: mock
+      SUPPORT_HOST: "0.0.0.0"
       PORT: "8080"
     # Real secrets stay out of git. Mount a chmod 600 config.json when you need
     # a live store or a live model provider:
     # volumes:
     #   - ./config.json:/app/config.json:ro
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
   n8n:
     image: n8nio/n8n:latest
@@ -58,7 +59,7 @@ services:
       # The workflows reach the tool service at this URL.
       SUPPORT_SERVICE_URL: http://service:8080
     ports:
-      - "5678:5678"
+      - "127.0.0.1:5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
       - ./workflows:/workflows:ro
