@@ -23,7 +23,7 @@ export function buildEscalation(
     status: "escalated",
     assignee: queue,
     intent: input.intent || "human_handoff",
-    reply: `I am connecting you with our team. I have logged your request and routed it to ${queue}. Someone will follow up by email shortly.`,
+    reply: `I have opened a support ticket and assigned it to ${queue} for follow-up.`,
   };
 }
 

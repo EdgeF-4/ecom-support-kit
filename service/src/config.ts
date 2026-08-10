@@ -23,7 +23,7 @@ export interface Config {
     };
   };
   cache: { enabled: boolean; ttlSeconds: number };
-  escalation: { queue: string; notifyEmail: string };
+  escalation: { queue: string };
   dataDir: string;
 }
 
@@ -32,7 +32,7 @@ const pkgRoot = path.resolve(here, "..", ".."); // service root
 
 function defaults(): Config {
   return {
-    service: { host: "0.0.0.0", port: 8080 },
+    service: { host: "127.0.0.1", port: 8080 },
     store: {
       driver: "memory",
       postgres: {
@@ -53,7 +53,7 @@ function defaults(): Config {
       },
     },
     cache: { enabled: true, ttlSeconds: 86400 },
-    escalation: { queue: "support-tier-1", notifyEmail: "support@example.com" },
+    escalation: { queue: "support-tier-1" },
     dataDir: process.env.DATA_DIR || path.join(pkgRoot, "data"),
   };
 }
@@ -86,6 +86,7 @@ function fromFile(): unknown {
 
 function fromEnv(cfg: Config): Config {
   const out = { ...cfg };
+  if (process.env.SERVICE_HOST) out.service.host = process.env.SERVICE_HOST;
   if (process.env.PORT) out.service.port = Number(process.env.PORT);
   if (process.env.STORE_DRIVER)
     out.store.driver = process.env.STORE_DRIVER as Config["store"]["driver"];

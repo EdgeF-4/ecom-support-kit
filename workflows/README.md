@@ -1,7 +1,8 @@
 # n8n workflows
 
-Two importable workflows. They target n8n 1.60 or newer, which bundles the
-LangChain nodes used on the model branch.
+Two importable workflows. The Compose file pins workflow runtime 2.33.7, the
+version used for this repository's import check. Other versions are not covered
+by that check.
 
 | File | Purpose |
 |------|---------|
@@ -25,14 +26,15 @@ docker compose exec n8n n8n import:workflow --separate --input=/workflows
 
 2. **Postgres credential.** Open the `Persist Ticket` node and select a
    Postgres credential pointing at the `support` database. Compose runs Postgres
-   at host `postgres`, port `5432`, user `support`.
+   at host `postgres`, port `5432`, user `support`. Use the same password value
+   supplied to Compose through the `POSTGRES_PASSWORD` environment variable.
 
 3. **Model credential (offline mock).** Open the `Chat Model (offline mock)`
    node and create an OpenAI credential. Any non empty API key works, because
    the node `baseURL` is overridden to the local mock at
    `{{$env.SUPPORT_SERVICE_URL}}/v1`. No real provider is contacted. To use a
-   real provider later, point the base URL and key at it in the credential and
-   in `config.json`.
+   real provider later, configure that node's base URL and owner-managed
+   credential. The direct service pipeline remains on its mock adapter.
 
 4. **MCP tools.** The `Store Tools (MCP)` node connects to the tool service MCP
    server at `{{$env.SUPPORT_SERVICE_URL}}/mcp` over streamable HTTP. No auth is
@@ -54,4 +56,9 @@ The `Classify` step asks the tool service for a route:
 - `out_of_scope`: not a supported task. The kit declines politely instead of
   behaving like a general chatbot.
 
-Every path ends by writing a row to `tickets` and responding to the caller.
+Every path writes one row to `tickets` and responds to the caller. The
+escalation tool creates its row before responding; the other three branches use
+the `Persist Ticket` node.
+
+The answer cache demonstrated by `npm run demo` belongs to the direct service
+pipeline. The imported model branch does not currently call the cache.

@@ -4,13 +4,17 @@ function formatWhen(iso: string): string {
   return new Date(iso).toISOString().replace("T", " ").slice(0, 16) + " UTC";
 }
 
-export function makeCheckBooking(slots: BookingSlot[]) {
+export function makeCheckBooking(
+  slots: BookingSlot[],
+  now: () => Date = () => new Date()
+) {
   return async function checkBooking(input: {
     topic?: string | null;
   }): Promise<ToolResult & { slots: BookingSlot[] }> {
     const topic = (input.topic || "").toLowerCase();
-    const matching = slots.filter((s) => !topic || s.topic === topic);
-    const use = (matching.length ? matching : slots).slice(0, 3);
+    const future = slots.filter((s) => Date.parse(s.startsAt) > now().valueOf());
+    const matching = future.filter((s) => !topic || s.topic === topic);
+    const use = (matching.length ? matching : future).slice(0, 3);
 
     if (!use.length) {
       return {

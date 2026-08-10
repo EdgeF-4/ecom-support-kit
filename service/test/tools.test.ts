@@ -93,13 +93,14 @@ test("escalate opens an escalated ticket and returns a reference", async () => {
   const escalate = makeEscalate(store, cfg);
   const r = (await escalate({
     message: "help me",
-    email: "x@y.com",
+    email: "customer@example.com",
     reason: "test",
-  })) as { ticketId: number; queue: string };
+  })) as { ticketId: number; queue: string; reply: string };
 
   assert.ok(r.ticketId > 0);
   assert.equal(r.queue, cfg.escalation.queue);
+  assert.match(r.reply, /opened a support ticket/i);
   const tickets = await store.listTickets();
   assert.equal(tickets[0].status, "escalated");
-  assert.equal(tickets[0].customerEmail, "x@y.com");
+  assert.equal(tickets[0].customerEmail, "customer@example.com");
 });

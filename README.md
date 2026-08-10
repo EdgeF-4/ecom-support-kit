@@ -1,15 +1,14 @@
 # ecom-support-kit
 
-A self hostable customer support kit for Shopify stores, built on self hosted
-n8n. It is a scoped business task assistant for order status, returns, shipping,
-store FAQ, and booking. It answers from your store data and routes anything it
-should not handle to a person. It is not a general chatbot.
+A self-hostable customer support reference kit for online stores. It handles
+order status, returns, shipping, store FAQ, and booking, and offers a human
+handoff outside that scope. It is not a general chatbot.
 
-I built this for small stores that want useful automated support they can run
-themselves, without shipping customer questions to a black box and without a
-monthly per seat bill. Everything in this repo runs offline out of the box with
-a mock store and a mock model, so you can try the whole flow with no API keys
-and no paid calls.
+This repository is a working offline demo and an integration starter for teams
+that want to own their support stack. It ships mock store and model adapters,
+so the service pipeline can be tried with no API keys and no paid calls. Real
+commerce and model-provider adapters are production integration work and are
+not included here.
 
 **Stack:** importable n8n workflows, a small Node and TypeScript tool service,
 Postgres for tickets, and Docker Compose for one command startup.
@@ -20,22 +19,21 @@ A generic chatbot bolted onto a store tends to do three things badly: it
 invents answers it cannot back up, it costs a model call on every single
 message, and it happily wanders off topic. This kit is built the opposite way.
 
-- **It stays in scope, which keeps it compliant.** As of January 2026, Meta
-  restricts general purpose AI chatbots on its messaging platforms, while scoped
-  assistants that handle defined business tasks such as order status, FAQ, and
-  booking remain allowed. This kit is scoped by construction: a classifier
-  decides whether a message is one of the supported tasks, and anything else is
-  declined politely rather than answered freely.
+- **It stays in scope by construction.** A deterministic classifier decides
+  whether a message is one of the supported tasks. Anything else is declined
+  politely rather than answered freely. Platform policies and deployment
+  compliance still need review for the channels and jurisdictions you use.
 - **Answers trace back to store data.** The deterministic tools look up real
-  orders and real FAQ entries. When the model is used, it is given only the tool
-  output and told to stay inside it, so it cannot make up a tracking number.
-- **Most messages never touch a paid model.** A deterministic first router
+  orders and FAQ entries. When the model is used, it is given only tool output
+  and instructed to stay inside it. That reduces hallucination risk, but a real
+  model deployment still needs output validation and monitoring.
+- **Clear requests never need a paid model.** A deterministic first router
   handles order lookups, FAQ, shipping, and booking with templates. The model is
-  reserved for messages that genuinely need to combine several tools. On top of
-  that, an answer cache means a repeated question is free the second time.
+  reserved for messages that need to combine several tools. The direct service
+  pipeline also caches repeated answers.
 - **You own it.** It is self hosted, every message becomes a ticket in your own
-  Postgres, and a dedicated error workflow captures any failed run so nothing
-  silently disappears.
+  Postgres, and the included error workflow can record failed orchestration runs
+  after it is selected in the intake workflow settings.
 
 ## Architecture
 
@@ -52,13 +50,14 @@ backed by mock adapters that need no credentials. Full detail is in
 
 ## See it run
 
-This is the actual output of `npm run demo`, which sends sample messages through
-the full pipeline offline:
+This is a captured run of `npm run demo` from 10 August 2026. The command sends
+sample messages through the direct service pipeline offline. Bundled mock dates
+are rebased on each run so orders and appointment slots stay current.
 
 ![Demo run](docs/demo.svg)
 
-Notice the last three lines: one model call across the whole run, the repeated
-question served from cache, and a ticket opened for every message.
+The last three lines show one mock-model call across the sample, a repeat served
+from cache, and one ticket opened for each message.
 
 ## Quick start
 
@@ -76,10 +75,25 @@ This starts Postgres, the tool service on port 8080, and n8n on port 5678. The
 default configuration uses the mock store and the mock model, so no API key is
 required.
 
+Both host ports bind to loopback. Check that all three services are healthy or
+running:
+
+```bash
+docker compose ps
+curl -s 127.0.0.1:8080/health
+```
+
+If either host port is already in use, choose different loopback ports:
+
+```bash
+SUPPORT_PORT=18080 N8N_PORT=15678 docker compose up -d
+curl -s 127.0.0.1:18080/health
+```
+
 Send a message straight to the tool service:
 
 ```bash
-curl -s localhost:8080/support \
+curl -s 127.0.0.1:8080/support \
   -H 'content-type: application/json' \
   -d '{"message":"where is my order #1001?"}'
 ```
@@ -92,7 +106,7 @@ including how to point the n8n chat model node at the offline mock.
 
 ```bash
 cd service
-npm install
+npm ci
 npm run build
 npm start          # serves on 8080 with the in memory store and mock model
 npm run demo       # prints the sample transcript shown above
@@ -103,7 +117,7 @@ npm run demo       # prints the sample transcript shown above
 | Route | When | Cost |
 |-------|------|------|
 | Deterministic | A single supported task with clear data, for example an order number or a known FAQ. | No model call. |
-| Model | In scope but needs to combine tools, for example an order plus a return question. | One model call, then cached. |
+| Model | In scope but needs to combine tools, for example an order plus a return question. | Direct service repeats are cached. The imported workflow calls its configured model. |
 | Escalate | The customer asks for a human, or confidence is low. | Opens a ticket, no model call. |
 | Out of scope | Not one of the supported tasks. | Declined politely, no model call. |
 
@@ -124,13 +138,23 @@ and calls these tools the standard way.
 
 Runtime configuration lives in `config.json`, which is git ignored and expected
 to be `chmod 600`. A committed `config.example.json` documents every field.
-Secrets never go in environment files and are never committed. The default
-config runs the kit offline, so no secret is needed to try it.
+Secret values should come from an owner-managed deployment secret store and
+must not be committed. The default config runs the kit offline, so no secret is
+needed to try it.
 
-To go live, point the store adapter at a real Shopify backend and set
-`llm.driver` to `openaiCompatible` with the base URL, model, and key of any
-OpenAI compatible provider. Those are the only changes; the rest of the kit does
-not move.
+## Production boundary
+
+The current direct service wires the bundled mock commerce and mock model
+adapters only. The imported workflow can use a real model through its model
+credential, but a real commerce adapter is not shipped. Escalation records a
+queue assignment; notification delivery is not included.
+
+The default host ports bind to loopback only. The tool-service routes do not
+implement authentication, so do not publish port 8080 directly. Before handling
+real customer data, add an authenticated TLS reverse proxy, implement and test
+the real commerce and model adapters, move secrets to your deployment secret
+manager, set retention and access controls for tickets and failures, and review
+the applicable platform and privacy rules.
 
 ## Tests
 
@@ -155,6 +179,7 @@ ecom-support-kit/
   workflows/              importable n8n intake and error workflows
   service/                Node and TypeScript tool service
     src/                  classifier, tools, mock adapters, MCP server, pipeline
+    data/mock-clock.json  keeps bundled mock dates relative to the run date
     test/                 unit and offline end to end tests
   docs/                   architecture diagram and demo screenshot
   scripts/publish.sh      one step publish for the repository owner

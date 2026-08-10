@@ -1,10 +1,10 @@
 {
   "service": {
-    "host": "0.0.0.0",
+    "host": "127.0.0.1",
     "port": 8080
   },
   "store": {
-    "driver": "postgres",
+    "driver": "memory",
     "postgres": {
       "host": "postgres",
       "port": 5432,
@@ -27,7 +27,6 @@
     "ttlSeconds": 86400
   },
   "escalation": {
-    "queue": "support-tier-1",
-    "notifyEmail": "support@example.com"
+    "queue": "support-tier-1"
   }
 }
