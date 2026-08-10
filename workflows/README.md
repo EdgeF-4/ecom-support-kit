@@ -1,64 +1,92 @@
-# n8n workflows
+# Local workflow definitions
 
-Two importable workflows. The Compose file pins workflow runtime 2.33.7, the
-version used for this repository's import check. Other versions are not covered
-by that check.
+This directory contains a thin intake webhook and an error recorder for the
+offline acceptance kit. The intake workflow delegates once to the tested
+`POST /support` pipeline, which owns routing, cache behavior, and ticket writes.
+
+The Compose file pins workflow runtime 2.33.7, the version used for the import
+check. Other versions are not covered by that check.
+
+## Files
 
 | File | Purpose |
-|------|---------|
-| `support-intake.json` | Receives a message, classifies it, calls tools, replies, and stores the ticket. |
-| `error-handler.json` | Catches any failed execution and posts the failing node, the input, and the error to the tool service. |
+|---|---|
+| `support-intake.json` | Accepts a message, calls the service once, and returns its result |
+| `error-handler.json` | Records the failed workflow, node, error, and input |
 
 ## Import
 
-From the n8n UI, open each file with **Workflows, Import from File**. Or from
-the running container:
+Start the stack from the repository root, then import both definitions:
 
 ```bash
+docker compose up -d --wait
 docker compose exec n8n n8n import:workflow --separate --input=/workflows
 ```
 
-## Wiring after import
+The offline workflows need no application credential. Compose supplies
+`SUPPORT_SERVICE_URL=http://service:8080`, and the service uses the local model
+and database.
 
-1. **Environment variable.** The workflows reach the tool service through
-   `SUPPORT_SERVICE_URL`. Docker Compose sets it to `http://service:8080`. If
-   you run n8n outside Compose, set it yourself.
+## Required operator steps
 
-2. **Postgres credential.** Open the `Persist Ticket` node and select a
-   Postgres credential pointing at the `support` database. Compose runs Postgres
-   at host `postgres`, port `5432`, user `support`. Use the same password value
-   supplied to Compose through the `POSTGRES_PASSWORD` environment variable.
+1. Open `Support Intake`.
+2. Open **Settings, Error Workflow**.
+3. Select `Support Error Handler`.
+4. Save both workflows.
+5. Activate `Support Intake` for the production webhook, or click **Execute
+   workflow** for one test webhook request.
 
-3. **Model credential (offline mock).** Open the `Chat Model (offline mock)`
-   node and create an OpenAI credential. Any non empty API key works, because
-   the node `baseURL` is overridden to the local mock at
-   `{{$env.SUPPORT_SERVICE_URL}}/v1`. No real provider is contacted. To use a
-   real provider later, configure that node's base URL and owner-managed
-   credential. The direct service pipeline remains on its mock adapter.
+Imported workflows do not select or activate an error workflow automatically.
 
-4. **MCP tools.** The `Store Tools (MCP)` node connects to the tool service MCP
-   server at `{{$env.SUPPORT_SERVICE_URL}}/mcp` over streamable HTTP. No auth is
-   needed for the local demo.
+## Send a test request
 
-5. **Error workflow.** Open `support-intake`, go to **Settings, Error
-   Workflow**, and select `Support Error Handler`. From then on, any failure in
-   the intake workflow is reported through the error workflow.
+After clicking **Execute workflow**, run:
 
-## How the intake workflow decides
+```bash
+curl -s http://127.0.0.1:5678/webhook-test/support/intake \
+  -H 'content-type: application/json' \
+  -d '{"message":"where is my order #1001?","channel":"web"}'
+```
 
-The `Classify` step asks the tool service for a route:
+After activation, use the production webhook path:
 
-- `deterministic`: a known task with clear data, answered from store data and a
-  template with no model call. The cheap, default path.
-- `model`: in scope but needs phrasing. The `Support Agent` uses the MCP tools
-  and the offline mock model, grounded strictly to tool output.
-- `escalate`: low confidence or a human was requested. A ticket is opened.
-- `out_of_scope`: not a supported task. The kit declines politely instead of
-  behaving like a general chatbot.
+```bash
+curl -s http://127.0.0.1:5678/webhook/support/intake \
+  -H 'content-type: application/json' \
+  -d '{"message":"where is my order #1001?","channel":"web"}'
+```
 
-Every path writes one row to `tickets` and responds to the caller. The
-escalation tool creates its row before responding; the other three branches use
-the `Persist Ticket` node.
+A successful response includes `reply`, `intent`, `route`, `status`,
+`ticketId`, and `cached`.
 
-The answer cache demonstrated by `npm run demo` belongs to the direct service
-pipeline. The imported model branch does not currently call the cache.
+Confirm that the service recorded exactly one ticket:
+
+```bash
+curl -s http://127.0.0.1:8080/tickets
+```
+
+## Failure behavior
+
+If the service is unavailable, the `Process Support Request` node fails. With
+the error workflow selected, the error handler attempts to record that failure
+through `POST /errors` after service access is restored.
+
+If the error recorder also cannot reach the service, inspect the failed
+execution in the workflow UI. Restore the service with:
+
+```bash
+docker compose up -d --wait service
+curl -s http://127.0.0.1:8080/health
+```
+
+Then retry the failed intake request. The kit does not include an external
+dead-letter queue, notification channel, or automatic replay.
+
+## Why the workflow is thin
+
+The previous graph repeated classification and persistence steps already owned
+by the service. That allowed the demo and imported workflow to drift, and made
+duplicate writes possible.
+
+The rebuilt graph has one composition root. The tradeoff is that route changes
+must be made and tested in the TypeScript pipeline rather than edited visually.

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { StoreData } from "../types.js";
+import { ActionableError } from "../errors.js";
 
 interface MockClock {
   anchorDate: string;
@@ -58,12 +59,35 @@ function rebaseMockDates(
  * an explicit integration task and is not included in this repository.
  */
 export function loadData(dataDir: string, now = new Date()): StoreData {
-  const read = (name: string) =>
-    JSON.parse(readFileSync(path.join(dataDir, name), "utf8"));
+  const read = (name: string) => {
+    const file = path.join(dataDir, name);
+    try {
+      return JSON.parse(readFileSync(file, "utf8"));
+    } catch (error) {
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String(error.code)
+          : "";
+      const missing = code === "ENOENT";
+      throw new ActionableError(
+        missing ? "DATA_FILE_MISSING" : "DATA_FILE_INVALID",
+        missing
+          ? `Cannot load the required mock data file ${file}.`
+          : `Cannot parse the mock data file ${file}.`,
+        missing
+          ? "Restore service/data, or set DATA_DIR to a directory containing orders.json, products.json, faq.json, and booking.json."
+          : "Fix the file as valid JSON, then run npm run demo again.",
+        { cause: error }
+      );
+    }
+  };
   const readClock = (): MockClock | null => {
     try {
       return read("mock-clock.json") as MockClock;
-    } catch {
+    } catch (error) {
+      if (error instanceof ActionableError && error.code !== "DATA_FILE_MISSING") {
+        throw error;
+      }
       return null;
     }
   };

@@ -11,7 +11,12 @@ interface Connection {
 }
 
 interface Workflow {
-  nodes: { name: string }[];
+  nodes: {
+    name: string;
+    type: string;
+    parameters?: Record<string, unknown>;
+    credentials?: Record<string, unknown>;
+  }[];
   connections: Record<string, Record<string, Connection[][]>>;
 }
 
@@ -42,10 +47,18 @@ test("workflow connections only target nodes that exist", () => {
   }
 });
 
-test("n8n escalation persists exactly once before responding", () => {
+test("intake workflow delegates once to the tested service pipeline", () => {
   const workflow = readWorkflow("support-intake.json");
-  const targets = workflow.connections["Build Response (escalate)"].main[0].map(
+  const nodes = new Map(workflow.nodes.map((node) => [node.name, node]));
+  const process = nodes.get("Process Support Request");
+  assert.equal(process?.type, "n8n-nodes-base.httpRequest");
+  assert.equal(process?.parameters?.url, "={{$env.SUPPORT_SERVICE_URL}}/support");
+  assert.equal(process?.credentials, undefined);
+
+  const targets = workflow.connections["Process Support Request"].main[0].map(
     (connection) => connection.node
   );
   assert.deepEqual(targets, ["Respond"]);
+  assert.equal(workflow.nodes.length, 3);
+  assert.ok(workflow.nodes.every((node) => node.credentials === undefined));
 });

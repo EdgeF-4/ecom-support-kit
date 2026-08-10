@@ -14,13 +14,7 @@
     }
   },
   "llm": {
-    "driver": "mock",
-    "openaiCompatible": {
-      "baseUrl": "https://api.your-provider.example/v1",
-      "apiKey": "REPLACE_WITH_PROVIDER_KEY",
-      "model": "your-model-name",
-      "maxTokens": 400
-    }
+    "driver": "mock"
   },
   "cache": {
     "enabled": true,

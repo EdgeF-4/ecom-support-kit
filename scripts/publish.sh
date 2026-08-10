@@ -1,71 +1,66 @@
 #!/usr/bin/env bash
-#
-# Publish this repository to a public GitHub repo and push main.
-#
-# Idempotent: if the repo already exists, it skips creation and just pushes.
-# The token is read from ~/.config/gh_push_token and is never written to disk
-# or to the git config; it is used only for the single push, which goes through
-# an ephemeral remote URL.
-#
-# Usage:
-#   ./scripts/publish.sh
-#
+# Push one reviewed, non-default branch through the configured git credential
+# helper. This script never creates a repository, changes visibility, or pushes
+# a default branch.
 set -euo pipefail
 
-OWNER="EdgeF-4"
-REPO="ecom-support-kit"
-DESCRIPTION="Self hostable scoped support assistant for Shopify stores on self hosted n8n."
-TOKEN_FILE="${HOME}/.config/gh_push_token"
-API="https://api.github.com"
+branch="${1:-}"
+remote="${2:-origin}"
 
-# Run from the repository root regardless of where the script is called from.
-cd "$(dirname "$0")/.."
+fail() {
+  printf 'error: %s\nnext: %s\n' "$1" "$2" >&2
+  exit 1
+}
 
-if [ ! -f "$TOKEN_FILE" ]; then
-  echo "error: token file not found at $TOKEN_FILE" >&2
-  exit 1
-fi
-TOKEN="$(tr -d ' \t\r\n' < "$TOKEN_FILE")"
-if [ -z "$TOKEN" ]; then
-  echo "error: token file $TOKEN_FILE is empty" >&2
-  exit 1
+if [ -z "$branch" ]; then
+  fail \
+    "no branch was supplied" \
+    "run ./scripts/publish.sh <review-branch> after the owner approves that branch"
 fi
 
-auth_header="Authorization: token ${TOKEN}"
-
-echo "checking for ${OWNER}/${REPO} ..."
-status="$(curl -s -o /dev/null -w '%{http_code}' -H "$auth_header" \
-  "${API}/repos/${OWNER}/${REPO}")"
-
-case "$status" in
-  200)
-    echo "repo already exists, skipping creation"
-    ;;
-  404)
-    echo "creating public repo ${OWNER}/${REPO} ..."
-    curl -fsS -H "$auth_header" -H "Accept: application/vnd.github+json" \
-      -X POST "${API}/user/repos" \
-      -d "{\"name\":\"${REPO}\",\"description\":\"${DESCRIPTION}\",\"private\":false,\"has_issues\":true}" \
-      >/dev/null
-    echo "created"
-    ;;
-  *)
-    echo "error: unexpected status ${status} from GitHub API" >&2
-    exit 1
+case "$branch" in
+  main|master|trunk)
+    fail \
+      "refusing to push the protected branch '$branch'" \
+      "create a review branch, commit there, and pass that branch name"
     ;;
 esac
 
-# Push main through an ephemeral authenticated URL so the token is not stored.
-push_url="https://${OWNER}:${TOKEN}@github.com/${OWNER}/${REPO}.git"
-echo "pushing main ..."
-git push "$push_url" main
-
-# Leave a clean, tokenless origin behind for convenience.
-clean_url="https://github.com/${OWNER}/${REPO}.git"
-if git remote | grep -qx origin; then
-  git remote set-url origin "$clean_url"
-else
-  git remote add origin "$clean_url"
+current="$(git branch --show-current)"
+if [ "$current" != "$branch" ]; then
+  fail \
+    "current branch '$current' does not match requested branch '$branch'" \
+    "run git switch '$branch', inspect the diff, and retry"
 fi
 
-echo "done: https://github.com/${OWNER}/${REPO}"
+if [ -n "$(git status --porcelain)" ]; then
+  fail \
+    "the working tree has uncommitted changes" \
+    "review and commit the intended files, or restore them, then retry"
+fi
+
+if ! git remote get-url "$remote" >/dev/null 2>&1; then
+  fail \
+    "remote '$remote' is not configured" \
+    "add the reviewed remote with git remote add '$remote' <repository-url>"
+fi
+
+remote_url="$(git remote get-url "$remote")"
+case "$remote_url" in
+  *://*@*)
+    fail \
+      "remote '$remote' appears to contain an inline credential" \
+      "replace it with a credential-free URL and use a configured credential helper"
+    ;;
+esac
+
+default_ref="$(git symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null || true)"
+default_branch="${default_ref##*/}"
+if [ -n "$default_ref" ] && [ "$branch" = "$default_branch" ]; then
+  fail \
+    "refusing to push detected default branch '$branch'" \
+    "create a review branch and pass its name instead"
+fi
+
+printf 'pushing review branch %s to %s\n' "$branch" "$remote"
+git push --set-upstream "$remote" "$branch"

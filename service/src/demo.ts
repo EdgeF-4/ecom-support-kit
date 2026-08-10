@@ -1,5 +1,6 @@
 import { loadConfig } from "./config.js";
 import { createServices } from "./services.js";
+import { formatActionable } from "./errors.js";
 
 const SAMPLES = [
   "Where is my order #1001?",
@@ -43,6 +44,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error(formatActionable(e));
   process.exit(1);
 });

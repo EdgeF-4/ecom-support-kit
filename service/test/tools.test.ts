@@ -82,8 +82,10 @@ test("check_booking filters slots by topic", async () => {
 });
 
 test("check_booking returns slots when no topic is given", async () => {
-  const r = (await booking({})) as { slots: unknown[] };
+  const r = (await booking({})) as { slots: unknown[]; reply: string };
   assert.ok(r.slots.length > 0);
+  assert.match(r.reply, /only checks availability/i);
+  assert.doesNotMatch(r.reply, /reserve it for you|lock it in/i);
 });
 
 // escalate -----------------------------------------------------------------

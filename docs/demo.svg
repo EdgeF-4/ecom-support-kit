@@ -33,8 +33,8 @@
   <text x="22" y="460" fill="#7ee787">&gt; I want to book a fitting next week</text>
   <text x="22" y="478" fill="#79c0ff">  route=deterministic      intent=booking  confidence=0.88  ticket=#4</text>
   <text x="22" y="496" fill="#c9d1d9">reply: Here are the next available fitting times: fitting on 2026-08-14 14:00 UTC (45 min);</text>
-  <text x="22" y="514" fill="#c9d1d9">    fitting on 2026-08-15 16:00 UTC (45 min). Reply with the one you want and the email for</text>
-  <text x="22" y="532" fill="#c9d1d9">    the invite, and I will lock it in.</text>
+  <text x="22" y="514" fill="#c9d1d9">    fitting on 2026-08-15 16:00 UTC (45 min). Choose a slot in your booking system to</text>
+  <text x="22" y="532" fill="#c9d1d9">    reserve it; this kit only checks availability.</text>
   <text x="22" y="550" fill="#c9d1d9"> </text>
   <text x="22" y="568" fill="#7ee787">&gt; Can you write me a poem about the ocean?</text>
   <text x="22" y="586" fill="#79c0ff">  route=out_of_scope       intent=out_of_scope  confidence=0.9  ticket=#5</text>

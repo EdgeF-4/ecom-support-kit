@@ -1,188 +1,304 @@
 # ecom-support-kit
 
-A self-hostable customer support reference kit for online stores. It handles
-order status, returns, shipping, store FAQ, and booking, and offers a human
-handoff outside that scope. It is not a general chatbot.
+ecom-support-kit is an offline acceptance kit for engineers and consultants
+designing support automation for online stores. It proves routing, store-data
+lookups, answer caching, ticket persistence, and human handoff before live data
+or paid model calls are involved, so a team can validate the risky workflow
+before choosing or integrating a full help desk.
 
-This repository is a working offline demo and an integration starter for teams
-that want to own their support stack. It ships mock store and model adapters,
-so the service pipeline can be tried with no API keys and no paid calls. Real
-commerce and model-provider adapters are production integration work and are
-not included here.
+This is a reference implementation and test harness. It is not a live support
+product.
 
-**Stack:** importable n8n workflows, a small Node and TypeScript tool service,
-Postgres for tickets, and Docker Compose for one command startup.
+## Prove it in under five minutes
 
-## Why this beats a generic chatbot
+Requirements:
 
-A generic chatbot bolted onto a store tends to do three things badly: it
-invents answers it cannot back up, it costs a model call on every single
-message, and it happily wanders off topic. This kit is built the opposite way.
+- Node.js 20 or newer
+- npm
 
-- **It stays in scope by construction.** A deterministic classifier decides
-  whether a message is one of the supported tasks. Anything else is declined
-  politely rather than answered freely. Platform policies and deployment
-  compliance still need review for the channels and jurisdictions you use.
-- **Answers trace back to store data.** The deterministic tools look up real
-  orders and FAQ entries. When the model is used, it is given only tool output
-  and instructed to stay inside it. That reduces hallucination risk, but a real
-  model deployment still needs output validation and monitoring.
-- **Clear requests never need a paid model.** A deterministic first router
-  handles order lookups, FAQ, shipping, and booking with templates. The model is
-  reserved for messages that need to combine several tools. The direct service
-  pipeline also caches repeated answers.
-- **You own it.** It is self hosted, every message becomes a ticket in your own
-  Postgres, and the included error workflow can record failed orchestration runs
-  after it is selected in the intake workflow settings.
-
-## Architecture
-
-![Architecture diagram](docs/architecture.svg)
-
-A message arrives at the n8n intake webhook. A deterministic classifier picks
-one of four routes: answer from store data with no model, synthesize an in scope
-answer with the model and the MCP tools, escalate to a human, or decline because
-the request is out of scope. Every path writes a ticket and replies to the
-caller. The tool service exposes the same business logic two ways, an MCP server
-for the model driven branch and a REST facade for the deterministic branch, both
-backed by mock adapters that need no credentials. Full detail is in
-[ARCHITECTURE.md](ARCHITECTURE.md).
-
-## See it run
-
-This is a captured run of `npm run demo` from 10 August 2026. The command sends
-sample messages through the direct service pipeline offline. Bundled mock dates
-are rebased on each run so orders and appointment slots stay current.
-
-![Demo run](docs/demo.svg)
-
-The last three lines show one mock-model call across the sample, a repeat served
-from cache, and one ticket opened for each message.
-
-## Quick start
-
-You need Docker and Docker Compose.
+Clone the repository with the repository page's Clone action. Then run:
 
 ```bash
-git clone https://github.com/EdgeF-4/ecom-support-kit.git
-cd ecom-support-kit
-cp config.example.json config.json
-chmod 600 config.json
-docker compose up -d
+cd ecom-support-kit/service
+npm ci
+npm run verify
 ```
 
-This starts Postgres, the tool service on port 8080, and n8n on port 5678. The
-default configuration uses the mock store and the mock model, so no API key is
-required.
+No configuration, API key, container, or paid call is required.
 
-Both host ports bind to loopback. Check that all three services are healthy or
-running:
+`npm run verify` builds the service, runs the unit and end-to-end suite, then
+prints six sample requests. The transcript shows all four routes, one ticket per
+request, one offline model call, and a repeated request served from cache.
+
+## Proof matrix
+
+Every capability claimed in this README has a command here.
+
+| Capability | Proof command | What to look for |
+|---|---|---|
+| Four routing outcomes | `cd service && npm run demo` | `deterministic`, `model`, `escalate`, and `out_of_scope` |
+| Store lookups and booking availability | `cd service && npm test` | order, FAQ, and booking test names report `ok` |
+| Cache and single ticket writes | `cd service && npm run demo` | `repeat served from cache: true` and ticket numbers increase once |
+| HTTP and tool-protocol surfaces | `cd service && npm test` | the HTTP surface test and protocol calls report `ok` |
+| Actionable failures | `cd service && npm test` | config, data, and HTTP failure tests report `ok` |
+| Workflow graph integrity | `cd service && npm test` | both workflow structure tests report `ok` |
+| Local service | `cd service && npm start` | `tool service listening on 127.0.0.1:8080` |
+| Database-backed local stack | `docker compose up -d --wait` | `docker compose ps` shows three running services |
+| Workflow import | `docker compose exec n8n n8n import:workflow --separate --input=/workflows` | two workflows are imported |
+
+The imported workflow still needs an operator to select its error workflow and
+activate its webhook. Those UI steps are documented in
+[workflows/README.md](workflows/README.md).
+
+## What it does not do
+
+- It does not provide an agent inbox, chat widget, email channel, social
+  channel, reporting dashboard, or knowledge-base editor.
+- It does not connect to a real commerce store or remote model. Both bundled
+  adapters are deterministic local fixtures.
+- It does not send escalation notifications. It records a queue assignment and
+  ticket only.
+- It does not reserve booking slots. It returns future availability only.
+- It does not authenticate service routes or establish privacy compliance.
+- It does not prove a full workflow execution until the operator imports,
+  configures, and runs the workflow in their own local runtime.
+
+Do not use this as a drop-in help desk. Do not expose it to live data. Teams
+that need a staffed inbox, live channels, or a supported production deployment
+should choose a production help desk and use this kit only as an integration
+acceptance fixture.
+
+## Design decision and tradeoff
+
+The service pipeline is the single composition root. The workflow is a thin
+webhook adapter that calls `POST /support` once and returns that result.
+
+This deliberately avoids duplicating routing and ticket writes in two systems.
+The benefit is one tested behavior for the command-line demo, HTTP service, and
+workflow. The cost is that visual-workflow users cannot change route logic by
+dragging nodes around. They must change and test the TypeScript pipeline.
+
+The router is deterministic first. Clear single-topic requests never need the
+offline model. Multi-topic requests use it, uncertain requests escalate, and
+unhandled topics are declined. This reduces cost and off-topic behavior. The
+tradeoff is a narrow supported scope and more human handoffs than a free-form
+chatbot.
+
+## Request outcomes
+
+| Route | Trigger | Result |
+|---|---|---|
+| `deterministic` | One supported task with enough data | Calls one store tool and writes one resolved ticket |
+| `model` | Several supported topics need one response | Combines tool output through the offline model and writes one ticket |
+| `escalate` | A human is requested or confidence is low | Writes one escalated ticket with a queue assignment |
+| `out_of_scope` | The task is unsupported | Declines the request and writes one ticket |
+
+Run the scenario transcript:
 
 ```bash
-docker compose ps
-curl -s 127.0.0.1:8080/health
+cd service
+npm run demo
 ```
 
-If either host port is already in use, choose different loopback ports:
+The mock dates are rebased on each run. Shipped orders and appointment slots do
+not silently become stale.
 
-```bash
-SUPPORT_PORT=18080 N8N_PORT=15678 docker compose up -d
-curl -s 127.0.0.1:18080/health
-```
+## Run the HTTP service
 
-Send a message straight to the tool service:
-
-```bash
-curl -s 127.0.0.1:8080/support \
-  -H 'content-type: application/json' \
-  -d '{"message":"where is my order #1001?"}'
-```
-
-Then import the workflows into n8n at `http://localhost:5678`. See
-[workflows/README.md](workflows/README.md) for the import and wiring steps,
-including how to point the n8n chat model node at the offline mock.
-
-### Run the tool service without Docker
+Start the offline service:
 
 ```bash
 cd service
 npm ci
-npm run build
-npm start          # serves on 8080 with the in memory store and mock model
-npm run demo       # prints the sample transcript shown above
+npm start
 ```
 
-## How it decides
+Leave that terminal running. In a second terminal:
 
-| Route | When | Cost |
-|-------|------|------|
-| Deterministic | A single supported task with clear data, for example an order number or a known FAQ. | No model call. |
-| Model | In scope but needs to combine tools, for example an order plus a return question. | Direct service repeats are cached. The imported workflow calls its configured model. |
-| Escalate | The customer asks for a human, or confidence is low. | Opens a ticket, no model call. |
-| Out of scope | Not one of the supported tasks. | Declined politely, no model call. |
+```bash
+curl -s http://127.0.0.1:8080/health
+curl -s http://127.0.0.1:8080/tools
+curl -s http://127.0.0.1:8080/support \
+  -H 'content-type: application/json' \
+  -d '{"message":"where is my order #1001?"}'
+curl -s http://127.0.0.1:8080/tickets
+curl -s http://127.0.0.1:8080/cache/stats
+```
 
-## Tools and MCP
+Use another loopback port if 8080 is busy:
 
-The tool service exposes four tools over an MCP server at `/mcp` and over a REST
-facade at `/tools/<name>`:
+```bash
+PORT=18080 npm start
+curl -s http://127.0.0.1:18080/health
+```
 
-- `order_lookup`: order status, fulfillment, and tracking by order number or email.
-- `faq_retrieval`: ranked answers from the store FAQ corpus.
-- `check_booking`: available consultation or fitting slots.
-- `escalate`: opens a ticket and routes it to a human queue.
+## Run the database-backed stack
 
-The n8n MCP Client node connects to `/mcp`, so the model driven branch discovers
-and calls these tools the standard way.
+Requirements:
 
-## Configuration and secrets
+- Docker
+- Docker Compose with `--wait` support
 
-Runtime configuration lives in `config.json`, which is git ignored and expected
-to be `chmod 600`. A committed `config.example.json` documents every field.
-Secret values should come from an owner-managed deployment secret store and
-must not be committed. The default config runs the kit offline, so no secret is
-needed to try it.
+From the repository root:
 
-## Production boundary
+```bash
+docker compose config --quiet
+docker compose up -d --wait
+docker compose ps
+curl -s http://127.0.0.1:8080/health
+```
 
-The current direct service wires the bundled mock commerce and mock model
-adapters only. The imported workflow can use a real model through its model
-credential, but a real commerce adapter is not shipped. Escalation records a
-queue assignment; notification delivery is not included.
+This starts the ticket database, tool service, and local workflow runtime. Host
+ports bind to loopback. The database has no host port.
 
-The default host ports bind to loopback only. The tool-service routes do not
-implement authentication, so do not publish port 8080 directly. Before handling
-real customer data, add an authenticated TLS reverse proxy, implement and test
-the real commerce and model adapters, move secrets to your deployment secret
-manager, set retention and access controls for tickets and failures, and review
-the applicable platform and privacy rules.
+If a host port is taken:
 
-## Tests
+```bash
+SUPPORT_PORT=18080 N8N_PORT=15678 docker compose up -d --wait
+curl -s http://127.0.0.1:18080/health
+```
+
+Import both workflow definitions:
+
+```bash
+docker compose exec n8n n8n import:workflow --separate --input=/workflows
+```
+
+Continue with [workflows/README.md](workflows/README.md).
+
+## Failure drills and fixes
+
+Each public error has an error code, a cause, and a `Next:` action. These three
+drills are safe and do not contact external services.
+
+### Broken configuration
+
+Trigger:
 
 ```bash
 cd service
-npm test
+SUPPORT_CONFIG=/dev/null npm run demo
 ```
 
-The suite uses the Node built in test runner, so there is no test framework to
-install. It covers the classifier routing decisions, each tool against the mock
-adapters, the answer cache, an offline end to end run through every route, and
-the HTTP and MCP surface on a real ephemeral port. It runs fully offline with
-the in memory store, and it passes from a clean checkout.
+Error: `[CONFIG_PARSE_FAILED] Cannot parse the configuration file ...`
+
+Cause: the selected file is empty or invalid JSON.
+
+Fix: point `SUPPORT_CONFIG` at valid JSON, or unset it to use the offline
+defaults. Then run `npm run demo` again.
+
+### Missing mock data
+
+Trigger:
+
+```bash
+cd service
+DATA_DIR=/tmp/not-a-support-data-dir npm run demo
+```
+
+Error: `[DATA_FILE_MISSING] Cannot load the required mock data file ...`
+
+Cause: the data directory does not contain the four required fixture files.
+
+Fix: unset `DATA_DIR`, restore `service/data`, or point it at a directory with
+`orders.json`, `products.json`, `faq.json`, and `booking.json`.
+
+### Unreachable database
+
+Trigger:
+
+```bash
+cd service
+STORE_DRIVER=postgres PGHOST=127.0.0.1 PGPORT=1 npm start
+```
+
+Error: `[STORE_UNAVAILABLE] Cannot initialize the ticket database ...`
+
+Cause: no database accepts connections at the configured host and port.
+
+Fix: run `docker compose -f ../docker-compose.yml up -d postgres`, or use
+`STORE_DRIVER=memory` for the offline check.
+
+Other startup errors use the same contract. For example, `LISTEN_FAILED` tells
+you to choose a free port, and `CONFIG_INVALID` names the invalid setting and an
+accepted value.
+
+## HTTP error contract
+
+Client errors return JSON with three stable fields:
+
+```json
+{
+  "error": "INVALID_INPUT",
+  "message": "The message field is missing or is not text.",
+  "next": "Send JSON such as {\"message\":\"where is order 1001?\"} and retry the request."
+}
+```
+
+The tests deliberately exercise invalid JSON, missing input, unknown tools,
+unknown routes, invalid chat input, and unsupported protocol methods.
+
+## Configuration and security boundary
+
+The zero-config service uses memory storage and local fixtures. Optional runtime
+configuration lives in `config.json`, which is ignored by git. Copy
+`config.example.json`, keep it mode 600, and supply real secrets through an
+owner-managed deployment secret store.
+
+The HTTP routes have no authentication. Never publish port 8080. Before using
+live data, add an authenticated TLS boundary, implement and test real adapters,
+define retention and access controls, add notification delivery, and review the
+rules for every support channel and jurisdiction.
+
+## Dependency policy
+
+Run the dependency checks:
+
+```bash
+cd service
+npm ci
+npm audit --omit=dev
+npm outdated
+```
+
+The runtime uses the version 22 long-term-support line, so its type definitions
+stay on version 22 rather than tracking unrelated runtime majors. The compiler
+stays on the current version 5 line because the next major requires its own
+migration and test pass. The database client stays on the current compatible
+version 8 line.
+
+The workflow image is pinned to the version used by the import check. The
+runtime and database container images track supported major lines so compatible
+security updates are received. A production release should lock tested image
+digests in its own deployment manifest.
+
+## Architecture
+
+[ARCHITECTURE.md](ARCHITECTURE.md) documents the component boundary, request
+flow, persistence model, and the single-composition-root decision.
+
+The service exposes four tools through REST and a standard tool protocol:
+
+- `order_lookup`
+- `faq_retrieval`
+- `check_booking`
+- `escalate`
+
+The tool protocol is an integration surface. The bundled workflow intentionally
+uses the tested `POST /support` pipeline instead of duplicating orchestration.
 
 ## Project layout
 
-```
+```text
 ecom-support-kit/
-  docker-compose.yml      one command startup for Postgres, the service, and n8n
-  config.example.json     documented config; copy to config.json (git ignored)
-  sql/init.sql            tickets, answer_cache, and failures tables
-  workflows/              importable n8n intake and error workflows
-  service/                Node and TypeScript tool service
-    src/                  classifier, tools, mock adapters, MCP server, pipeline
-    data/mock-clock.json  keeps bundled mock dates relative to the run date
-    test/                 unit and offline end to end tests
-  docs/                   architecture diagram and demo screenshot
-  scripts/publish.sh      one step publish for the repository owner
+  README.md              executable proof and boundaries
+  ARCHITECTURE.md        design decisions and data flow
+  docker-compose.yml     database, service, and workflow runtime
+  config.example.json    non-secret configuration example
+  service/               TypeScript service, local fixtures, and tests
+  sql/init.sql            ticket, cache, and failure tables
+  workflows/             intake and error workflow definitions
+  scripts/publish.sh     branch-only push helper with safety checks
 ```
 
 ## License

@@ -1,115 +1,130 @@
 # Architecture
 
-This kit answers customer questions for a Shopify store inside a tightly scoped
-set of business tasks: order status, returns and refunds, shipping, store FAQ,
-and booking. Clear single-topic requests use deterministic tools instead of a
-paid model, and anything outside the supported tasks is politely
-declined instead of answered freely.
+ecom-support-kit is an offline acceptance kit. It exercises one narrow support
+pipeline against local store fixtures and records the result. It is not a help
+desk, channel adapter collection, or production deployment.
 
 ## Components
 
-| Component | Role | Technology |
-|-----------|------|------------|
-| n8n | Orchestration. Receives a message, classifies it, calls tools, replies, and records the ticket. | Self-hosted n8n |
-| Tool service | Deterministic business logic exposed two ways: an MCP server for the n8n MCP Client node, and a plain REST facade for direct use and tests. | Node.js + TypeScript |
-| Postgres | Durable storage for tickets and the answer cache. | Postgres 16 |
-| Mock Shopify adapter | Reads orders and products from local JSON so the whole kit runs offline with no store credentials. | In-process module |
-| Mock LLM | Deterministic, grounded, OpenAI-compatible stand in so the kit runs offline with no API key and no paid calls. | In-process module |
+| Component | Responsibility | Boundary |
+|---|---|---|
+| Intake workflow | Converts one webhook request into one service call | No routing or persistence logic |
+| Tool service | Classifies, calls tools, composes a reply, and records one ticket | No authentication or live adapters |
+| Memory store | Zero-config demo persistence for one process | Not durable |
+| Database store | Durable local tickets, cache entries, and failure records | No host port in Compose |
+| Mock commerce adapter | Reads orders, FAQ entries, products, and slots from JSON | Read only |
+| Offline model | Combines tool output for multi-topic examples | Deterministic fixture, no network |
+| Error workflow | Attempts to record failed workflow executions | No external dead-letter queue |
 
-Everything ships with mock adapters, so the default runtime makes no external
-API calls once dependencies and container images are installed. The direct
-service does not include production commerce or model adapters; adding them
-requires implementation and integration testing.
+The service exposes the same four tools through REST and a standard tool
+protocol. That protocol is an integration surface. The bundled intake workflow
+calls the complete service pipeline instead of rebuilding orchestration with
+visual nodes.
 
 ## Request flow
 
 ```mermaid
 flowchart TD
-    A[Customer message] --> B[n8n intake webhook]
-    B --> C[Classify: deterministic vs model]
-    C -->|out of scope| R1[Scoped refusal + offer a human]
-    C -->|known task with clear data| D[Direct tool call]
-    C -->|needs phrasing| E[Model branch: agent + MCP Client node]
-    C -->|low confidence or human requested| F[Escalate]
-    D --> G[Compose reply]
-    E --> G
-    F --> H2[(Persist ticket through tool)]
-    R1 --> G
-    G --> H[(Persist ticket in Postgres)]
-    H --> I[Respond to caller]
-    H2 --> I
+    A[Webhook or direct HTTP request] --> B[POST /support]
+    B --> C[Deterministic classification]
+    C --> D{Cached non-escalation answer?}
+    D -->|yes| H[Write one ticket]
+    D -->|no| E{Route}
+    E -->|single supported topic| F[Deterministic store tool]
+    E -->|several supported topics| G[Offline model over tool output]
+    E -->|human requested or uncertain| I[Escalation plan]
+    E -->|unsupported| J[Scoped refusal]
+    F --> H
+    G --> H
+    I --> H
+    J --> H
+    H --> K[Return reply, route, status, ticket id, cache flag]
 ```
 
-### Classification
+## Single composition root
 
-A deterministic classifier runs first. It detects intent from keywords and
-extracts entities such as an order number or email. The outcome is a `route`:
+Routing and ticket creation live in `service/src/pipeline.ts`. The command-line
+demo, `POST /support`, and the intake workflow all execute that same function.
 
-- `deterministic`: the intent maps cleanly to store data, for example an order
-  status lookup or a known FAQ. The tool service answers from data and a
-  template. No model is called, so this path is effectively free.
-- `model`: the message is in scope but needs natural language synthesis. The
-  model is called with a strict, grounded prompt and is instructed to use only
-  tool output.
-- `escalate`: low confidence, an explicit request for a human, or a failed
-  lookup. A ticket is opened and assigned to a support queue. Notification
-  delivery is a production integration task.
-- `out_of_scope`: the message is not one of the supported tasks. The kit
-  declines and offers to connect a human, rather than acting as a general
-  chatbot.
+This is a deliberate response to drift. When route logic exists in both code
+and a visual workflow, fixes must land twice and side effects can run twice. A
+thin workflow prevents that class of defect.
 
-### Tools
+The tradeoff is reduced visual configurability. Teams that want to change route
+behavior must edit the pipeline and extend its tests.
 
-The tool service exposes four tools backed by the mock adapters:
+## Routing opinion
 
-- `order_lookup`: order status, fulfillment, and tracking for an order id or
-  email.
-- `faq_retrieval`: ranked answers from the store FAQ corpus (returns, shipping,
-  sizing, warranty, and similar).
-- `escalate`: opens a ticket and assigns it to the configured human queue.
-- `check_booking`: returns available slots for a consultation or fitting.
+The classifier chooses one of four routes:
 
-The same functions are reachable two ways. The n8n MCP Client node talks to the
-MCP server for the model-driven branch, and the deterministic branch calls the
-REST facade directly. Both call the identical underlying functions, so behavior
-is consistent regardless of entry point.
+- `deterministic` for one supported task with enough data
+- `model` for several supported topics that need one response
+- `escalate` for an explicit human request or low confidence
+- `out_of_scope` for unsupported work
 
-### Cost control
+Deterministic routing is the default because clear lookups do not benefit from
+a model call. The cost is intentionally narrow coverage and more handoffs.
 
-The direct `POST /support` pipeline checks the answer cache first. The cache key
-is a hash of the normalized message and route. A hit returns the stored answer
-and skips the model call entirely. Deterministic answers are also cached for
-consistency. Cache entries use the configured persistence store. The imported
-workflow's model branch does not currently call this cache.
+## Cache and side effects
 
-### Error workflow
+The cache key hashes the normalized message and route. A cache hit reuses the
+reply but still creates a new ticket for the new inbound message.
 
-An error workflow is included, but imported workflows do not select it
-automatically. An operator must choose it in the intake workflow settings. It
-captures failure details and posts them to the tool service when that reporting
-path is available.
+Escalations bypass the cache because every human request is a new side effect.
+All routes write exactly one ticket.
 
-## Why scoped, not a general chatbot
+## Error contract
 
-Scoped routing reduces off-topic behavior and keeps deterministic tasks away
-from the model. It does not by itself establish compliance. Review current
-channel policies, privacy rules, and the behavior of any production model
-before deployment.
+Expected failures use a stable code, a cause, and a next action.
 
-## Configuration and secrets
+CLI form:
 
-Runtime configuration lives in `config.json`, which is git ignored and expected
-to be `chmod 600`. A committed `config.example.json` documents every field.
-Secret values should be supplied by the deployment's secret manager and must
-not be committed. The default config uses the mock store and mock model, so no
-secret is required to run the demo.
+```text
+[STORE_UNAVAILABLE] Cannot initialize the ticket database. Next: Start the local database or use memory storage for the offline check.
+```
 
-## Data model
+HTTP form:
+
+```json
+{
+  "error": "INVALID_JSON",
+  "message": "The request body is not a valid JSON object.",
+  "next": "Send an object with content-type application/json and retry the request."
+}
+```
+
+Unknown internal exceptions are not returned to HTTP callers. They become an
+`INTERNAL_ERROR` response with a log-and-retry instruction.
+
+## Configuration order
+
+Configuration precedence is:
+
+1. built-in offline defaults
+2. optional `config.json`
+3. environment variables
+
+Invalid JSON, invalid ports, and unsupported adapters stop startup. They do not
+silently fall back to a different behavior.
+
+## Persistence model
 
 Three tables are defined in `sql/init.sql`:
 
-- `tickets`: one row per inbound message, with the resolved intent, route,
-  status, reply, and confidence.
-- `answer_cache`: cached responses keyed by normalized message and route, with a
-  hit counter for observability.
-- `failures`: captured workflow failure details for operator review.
+- `tickets` stores one record per inbound message
+- `answer_cache` stores reusable non-escalation responses and hit counts
+- `failures` stores workflow failure context for operator review
+
+The memory store implements the same interface for the no-container proof.
+
+## Security and production boundary
+
+Compose binds application ports to loopback and does not publish the database
+port. The HTTP service itself has no authentication.
+
+Before live data, add an authenticated TLS boundary, implement and test real
+commerce and model adapters, define retention and access controls, add
+notification delivery, and review channel and privacy obligations.
+
+The kit does not provide an inbox, outbound channel, booking reservation,
+notification handoff, compliance guarantee, or production operations model.

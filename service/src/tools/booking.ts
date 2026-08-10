@@ -32,7 +32,7 @@ export function makeCheckBooking(
       slots: use,
       reply: `Here are the next available ${
         topic || "booking"
-      } times: ${human}. Reply with the one you want and the email for the invite, and I will lock it in.`,
+      } times: ${human}. Choose a slot in your booking system to reserve it; this kit only checks availability.`,
     };
   };
 }
