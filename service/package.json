@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Deterministic tool service for the support kit: order lookup, FAQ retrieval, escalation, and booking on mock adapters.",
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -15,11 +15,11 @@
     "verify": "npm test && node dist/src/demo.js"
   },
   "dependencies": {
-    "pg": "^8.23.0"
+    "pg": "8.23.0"
   },
   "devDependencies": {
-    "@types/node": "^22.20.1",
-    "@types/pg": "^8.21.0",
-    "typescript": "^5.9.3"
+    "@types/node": "24.13.3",
+    "@types/pg": "8.21.0",
+    "typescript": "5.9.3"
   }
 }

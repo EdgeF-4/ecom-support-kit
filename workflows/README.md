@@ -4,8 +4,11 @@ This directory contains a thin intake webhook and an error recorder for the
 offline acceptance kit. The intake workflow delegates once to the tested
 `POST /support` pipeline, which owns routing, cache behavior, and ticket writes.
 
-The Compose file pins workflow runtime 2.33.7, the version used for the import
-check. Other versions are not covered by that check.
+The repository validates these definitions as JSON and checks their graph
+shape, node types, request path, and single service call in `npm test`. It does
+not bundle a workflow runtime. That keeps an optional third-party dependency
+surface out of the acceptance stack while preserving the definitions for teams
+that already operate a supported installation.
 
 ## Files
 
@@ -16,31 +19,35 @@ check. Other versions are not covered by that check.
 
 ## Import
 
-Start the stack from the repository root, then import both definitions:
+Start the database and service from the repository root:
 
 ```bash
 docker compose up -d --wait
-docker compose exec n8n n8n import:workflow --separate --input=/workflows
+curl -s http://127.0.0.1:8080/health
 ```
 
-The offline workflows need no application credential. Compose supplies
-`SUPPORT_SERVICE_URL=http://service:8080`, and the service uses the local model
-and database.
+In your separately managed workflow installation, import
+`support-intake.json` and `error-handler.json` using that installation's
+documented import command or UI. Configure `SUPPORT_SERVICE_URL` to the URL by
+which that installation reaches the service. The workflows need no application
+credential, and the service uses the local model and database.
 
 ## Required operator steps
 
-1. Open `Support Intake`.
-2. Open **Settings, Error Workflow**.
-3. Select `Support Error Handler`.
-4. Save both workflows.
-5. Activate `Support Intake` for the production webhook, or click **Execute
+1. Import both JSON files into a separately managed supported installation.
+2. Open `Support Intake`.
+3. Open **Settings, Error Workflow**.
+4. Select `Support Error Handler`.
+5. Save both workflows.
+6. Activate `Support Intake` for the production webhook, or click **Execute
    workflow** for one test webhook request.
 
 Imported workflows do not select or activate an error workflow automatically.
 
 ## Send a test request
 
-After clicking **Execute workflow**, run:
+After clicking **Execute workflow**, replace port 5678 below if your separately
+managed installation uses another loopback port, then run:
 
 ```bash
 curl -s http://127.0.0.1:5678/webhook-test/support/intake \

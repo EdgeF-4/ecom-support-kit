@@ -2,7 +2,9 @@ name: ecom-support-kit
 
 services:
   postgres:
-    image: postgres:16-alpine
+    # PostgreSQL 18.6 on the reviewed Wolfi image. The digest is the complete
+    # immutable input; there is no floating tag in this deployment manifest.
+    image: cgr.dev/chainguard/postgres@sha256:13d374b74c78215f3b902435ebd96c4521245d53fdb69e8f166fdcebb155f219
     restart: unless-stopped
     environment:
       POSTGRES_DB: support
@@ -48,29 +50,5 @@ services:
       timeout: 5s
       retries: 10
 
-  n8n:
-    image: n8nio/n8n:2.33.7
-    restart: unless-stopped
-    depends_on:
-      service:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    environment:
-      N8N_PORT: "5678"
-      N8N_PROTOCOL: http
-      N8N_HOST: localhost
-      N8N_SECURE_COOKIE: "false"
-      WEBHOOK_URL: http://localhost:5678/
-      GENERIC_TIMEZONE: UTC
-      # The workflows reach the tool service at this URL.
-      SUPPORT_SERVICE_URL: http://service:8080
-    ports:
-      - "127.0.0.1:${N8N_PORT:-5678}:5678"
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ./workflows:/workflows:ro
-
 volumes:
   pgdata:
-  n8n_data:

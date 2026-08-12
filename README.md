@@ -13,7 +13,7 @@ product.
 
 Requirements:
 
-- Node.js 20 or newer
+- Node.js 24
 - npm
 
 Clone the repository with the repository page's Clone action. Then run:
@@ -43,10 +43,10 @@ Every capability claimed in this README has a command here.
 | Actionable failures | `cd service && npm test` | config, data, and HTTP failure tests report `ok` |
 | Workflow graph integrity | `cd service && npm test` | both workflow structure tests report `ok` |
 | Local service | `cd service && npm start` | `tool service listening on 127.0.0.1:8080` |
-| Database-backed local stack | `docker compose up -d --wait` | `docker compose ps` shows three running services |
-| Workflow import | `docker compose exec n8n n8n import:workflow --separate --input=/workflows` | two workflows are imported |
+| Database-backed local stack | `docker compose up -d --wait` | `docker compose ps` shows the database and service healthy |
+| Exact direct dependency set | `cd service && npm ls --depth=0` | the four deliberate versions match `package.json` |
 
-The imported workflow still needs an operator to select its error workflow and
+An imported workflow still needs an operator to select its error workflow and
 activate its webhook. Those UI steps are documented in
 [workflows/README.md](workflows/README.md).
 
@@ -148,23 +148,20 @@ docker compose ps
 curl -s http://127.0.0.1:8080/health
 ```
 
-This starts the ticket database, tool service, and local workflow runtime. Host
-ports bind to loopback. The database has no host port.
+This starts the ticket database and tool service. The service port binds to
+loopback. The database has no host port.
 
 If a host port is taken:
 
 ```bash
-SUPPORT_PORT=18080 N8N_PORT=15678 docker compose up -d --wait
+SUPPORT_PORT=18080 docker compose up -d --wait
 curl -s http://127.0.0.1:18080/health
 ```
 
-Import both workflow definitions:
-
-```bash
-docker compose exec n8n n8n import:workflow --separate --input=/workflows
-```
-
-Continue with [workflows/README.md](workflows/README.md).
+The two optional workflow definitions remain under `workflows/`. They are
+validated by `npm test`, but this repository does not bundle their runtime.
+Continue with [workflows/README.md](workflows/README.md) only if you already run
+a supported workflow installation and accept its separate dependency surface.
 
 ## Failure drills and fixes
 
@@ -261,16 +258,17 @@ npm audit --omit=dev
 npm outdated
 ```
 
-The runtime uses the version 22 long-term-support line, so its type definitions
-stay on version 22 rather than tracking unrelated runtime majors. The compiler
-stays on the current version 5 line because the next major requires its own
-migration and test pass. The database client stays on the current compatible
-version 8 line.
+The manifest exact-pins every direct package. The runtime and type definitions
+use Node 24, the active long-term-support line reviewed for this kit. The
+compiler stays exact-pinned to 5.9.3 because the next major is a separate
+migration, not a compatible patch. The database client stays exact-pinned to
+the current compatible version 8 release.
 
-The workflow image is pinned to the version used by the import check. The
-runtime and database container images track supported major lines so compatible
-security updates are received. A production release should lock tested image
-digests in its own deployment manifest.
+Both container inputs are locked to reviewed digests. The service image removes
+the Node package-manager toolchain, runs as the unprivileged `node` user, and
+contains only production packages. The optional visual workflow runtime is
+deliberately not bundled because its independent dependency surface did not
+meet this kit's zero-known-vulnerability release threshold.
 
 ## Architecture
 
@@ -293,7 +291,7 @@ uses the tested `POST /support` pipeline instead of duplicating orchestration.
 ecom-support-kit/
   README.md              executable proof and boundaries
   ARCHITECTURE.md        design decisions and data flow
-  docker-compose.yml     database, service, and workflow runtime
+  docker-compose.yml     database and service runtime
   config.example.json    non-secret configuration example
   service/               TypeScript service, local fixtures, and tests
   sql/init.sql            ticket, cache, and failure tables
