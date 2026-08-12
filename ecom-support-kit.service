@@ -4,13 +4,13 @@ After=local-fs.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/ecom-support-kit/service
+WorkingDirectory=/opt/ecom-support-kit/service
 Environment=SUPPORT_CONFIG=/dev/null
 Environment=STORE_DRIVER=memory
 Environment=LLM_DRIVER=mock
 Environment=SUPPORT_HOST=127.0.0.1
 Environment=PORT=8080
-ExecStart=/usr/local/bin/node /root/ecom-support-kit/service/dist/src/index.js
+ExecStart=/usr/local/bin/node /opt/ecom-support-kit/service/dist/src/index.js
 Restart=on-failure
 RestartSec=5
 

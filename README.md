@@ -1,5 +1,10 @@
 # ecom-support-kit
 
+I built ecom-support-kit as a self-hostable support workflow for small stores.
+It handles order status, returns, shipping, store FAQs, and booking, then sends
+low-confidence or out-of-scope requests to a person. The bundled storefront and
+model adapter are synthetic, so the complete demo runs offline.
+
 ## Quickstart: 60-second offline demo
 
 With Node 20 or newer and the repository's npm dependencies installed, run:
@@ -27,16 +32,8 @@ or network access. Expected output includes:
   tickets persisted: 7
 ```
 
-A self hostable customer support kit for Shopify stores, built on self hosted
-n8n. It is a scoped business task assistant for order status, returns, shipping,
-store FAQ, and booking. It answers from your store data and routes anything it
-should not handle to a person. It is not a general chatbot.
-
-I built this for small stores that want useful automated support they can run
-themselves, without shipping customer questions to a black box and without a
-monthly per seat bill. Everything in this repo runs offline out of the box with
-a mock store and a mock model, so you can try the whole flow with no API keys
-and no paid calls.
+The goal is useful support without a black box or a monthly per-seat bill. It
+is deliberately a scoped business-task assistant, not a general chatbot.
 
 **Stack:** importable n8n workflows, a small Node and TypeScript tool service,
 Postgres for tickets, and Docker Compose for one command startup.
@@ -68,6 +65,26 @@ message, and it happily wanders off topic. This kit is built the opposite way.
 
 ![Architecture diagram](docs/architecture.svg)
 
+```text
+customer message
+       |
+       v
+ n8n intake webhook
+       |
+       v
+ deterministic classifier
+   |         |          |          |
+   v         v          v          v
+ tools    synthesis   handoff    refuse
+   |         |          |          |
+   +---------+----------+----------+
+                       |
+                       v
+                ticket + response
+
+tools --> REST facade / MCP server --> store + booking adapters
+```
+
 A message arrives at the n8n intake webhook. A deterministic classifier picks
 one of four routes: answer from store data with no model, synthesize an in scope
 answer with the model and the MCP tools, escalate to a human, or decline because
@@ -93,8 +110,6 @@ question served from cache, and a ticket opened for every message.
 You need Docker and Docker Compose.
 
 ```bash
-git clone https://github.com/EdgeF-4/ecom-support-kit.git
-cd ecom-support-kit
 cp config.example.json config.json
 chmod 600 config.json
 docker compose up -d
@@ -160,6 +175,17 @@ Going live therefore requires implementing and selecting live adapters, then
 supplying their reviewed endpoint, model, and credential configuration. Changing
 `config.json` alone does not enable a real store or model provider.
 
+## Limitations
+
+- Live commerce, calendar, and model-provider adapters are not included. The
+  committed adapters are deterministic mocks for local evaluation.
+- The classifier covers a fixed support scope and is English-oriented; a store
+  must review intents, policies, templates, and escalation rules before use.
+- The demo does not provide production identity verification, payment handling,
+  abuse controls, retention policy, backups, or observability.
+- n8n workflow import and live credential wiring are operator steps rather than
+  an automated deployment path.
+
 ## Tests
 
 ```bash
@@ -185,7 +211,7 @@ ecom-support-kit/
     src/                  classifier, tools, mock adapters, MCP server, pipeline
     test/                 unit and offline end to end tests
   docs/                   architecture diagram and demo screenshot
-  scripts/publish.sh      one step publish for the repository owner
+  scripts/publish.sh      optional publishing helper; requires an explicit owner
 ```
 
 ## License

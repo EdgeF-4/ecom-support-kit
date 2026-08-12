@@ -12,11 +12,16 @@
 #
 set -euo pipefail
 
-OWNER="EdgeF-4"
+OWNER="${GITHUB_OWNER:-}"
 REPO="ecom-support-kit"
 DESCRIPTION="Self hostable scoped support assistant for Shopify stores on self hosted n8n."
 TOKEN_FILE="${HOME}/.config/gh_push_token"
 API="https://api.github.com"
+
+if [ -z "$OWNER" ]; then
+  echo "error: set GITHUB_OWNER to the destination account" >&2
+  exit 2
+fi
 
 # Run from the repository root regardless of where the script is called from.
 cd "$(dirname "$0")/.."
