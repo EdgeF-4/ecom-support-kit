@@ -55,3 +55,58 @@ export function formatActionable(error: unknown): string {
   const problem = toProblem(error);
   return `[${problem.error}] ${problem.message} Next: ${problem.next}`;
 }
+
+export function listenFailure(
+  error: unknown,
+  host: string,
+  port: number
+): ActionableError {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "LISTEN_FAILED";
+
+  let next: string;
+  switch (code) {
+    case "EADDRINUSE":
+      next = `Stop the process using port ${port}, or choose an unused loopback port with PORT=${port + 1} npm start.`;
+      break;
+    case "EACCES":
+      next = "Choose an unprivileged port such as PORT=8080, check local bind permissions, and retry npm start.";
+      break;
+    case "ENOTFOUND":
+    case "EADDRNOTAVAIL":
+    case "EAI_AGAIN":
+    case "EAI_FAIL":
+      next = "Set SERVICE_HOST=127.0.0.1, verify that the address exists locally, and retry npm start.";
+      break;
+    default:
+      next = "Check SERVICE_HOST, PORT, and local socket permissions, then retry npm start.";
+  }
+
+  return new ActionableError(
+    "LISTEN_FAILED",
+    `Cannot listen on ${host}:${port} (${code}).`,
+    next,
+    { cause: error }
+  );
+}
+
+export function runtimeServerFailure(error: unknown): ActionableError {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "SERVER_ERROR";
+  return new ActionableError(
+    "SERVER_ERROR",
+    `The HTTP server reported a runtime failure (${code}).`,
+    "Check the service log and active client requests, restart npm start, then run npm run verify if it repeats.",
+    { cause: error }
+  );
+}
