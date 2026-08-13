@@ -2,10 +2,11 @@
 # Push one reviewed, non-default branch through the configured git credential
 # helper. This script never creates a repository, changes visibility, or pushes
 # a default branch.
-set -euo pipefail
+set -uo pipefail
 
 branch="${1:-}"
 remote="${2:-origin}"
+git_command="${PUBLISH_GIT:-git}"
 
 fail() {
   printf 'error: %s\nnext: %s\n' "$1" "$2" >&2
@@ -26,26 +27,34 @@ case "$branch" in
     ;;
 esac
 
-current="$(git branch --show-current)"
+if ! current=$("$git_command" branch --show-current 2>/dev/null); then
+  fail \
+    "the current Git branch could not be read" \
+    "install Git, run git status in this checkout, fix that error, and retry"
+fi
 if [ "$current" != "$branch" ]; then
   fail \
     "current branch '$current' does not match requested branch '$branch'" \
     "run git switch '$branch', inspect the diff, and retry"
 fi
 
-if [ -n "$(git status --porcelain)" ]; then
+if ! status_output=$("$git_command" status --porcelain 2>/dev/null); then
+  fail \
+    "the working-tree status could not be read" \
+    "run git status, repair the reported repository error, and retry"
+fi
+if [ -n "$status_output" ]; then
   fail \
     "the working tree has uncommitted changes" \
     "review and commit the intended files, or restore them, then retry"
 fi
 
-if ! git remote get-url "$remote" >/dev/null 2>&1; then
+if ! remote_url=$("$git_command" remote get-url "$remote" 2>/dev/null); then
   fail \
     "remote '$remote' is not configured" \
     "add the reviewed remote with git remote add '$remote' <repository-url>"
 fi
 
-remote_url="$(git remote get-url "$remote")"
 case "$remote_url" in
   *://*@*)
     fail \
@@ -54,7 +63,7 @@ case "$remote_url" in
     ;;
 esac
 
-default_ref="$(git symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null || true)"
+default_ref="$("$git_command" symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null || true)"
 default_branch="${default_ref##*/}"
 if [ -n "$default_ref" ] && [ "$branch" = "$default_branch" ]; then
   fail \
@@ -63,4 +72,9 @@ if [ -n "$default_ref" ] && [ "$branch" = "$default_branch" ]; then
 fi
 
 printf 'pushing review branch %s to %s\n' "$branch" "$remote"
-git push --set-upstream "$remote" "$branch"
+if ! "$git_command" push --set-upstream "$remote" "$branch" >/dev/null 2>&1; then
+  fail \
+    "Git could not push review branch '$branch' to remote '$remote'" \
+    "run git ls-remote '$remote', repair access or the remote URL, then rerun this command"
+fi
+printf 'pushed review branch %s to %s\n' "$branch" "$remote"
